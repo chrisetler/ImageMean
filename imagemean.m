@@ -18,12 +18,12 @@ a = imread(image_name);
 
 %how big of an area to break the image up into
 %bigger => blockier image
-boxsize = 10;
+boxsize = 2;
 num_blocks_n = ceil(x / boxsize);
 num_blocks_m = ceil(y / boxsize);
 %generates the output file
 %uint8 because color values go typically from 0-255
-aout = uint8(zeros(num_blocks_m,num_blocks_n,3));
+aout = uint8(zeros(y,x,3));
 
 %goes through the image block by block
 for n = 1:(num_blocks_n);
@@ -42,9 +42,13 @@ for n = 1:(num_blocks_n);
         for channel = 1:1:3;
             if(n ~= num_blocks_n && m ~= num_blocks_m)
                 channel_sum(channel) = sum(sum(a((m_offset):(m_offset+boxsize), (n_offset):(n_offset+boxsize), channel)));
+                box_x = boxsize;
+                box_y = boxsize;
                 channel_length = boxsize*boxsize;
             else
                 channel_sum(channel) = sum(sum(a((m_offset):y, (n_offset):x, channel)));
+                box_x = x - n_offset;
+                box_y = y - m_offset;
                 channel_length = (y - m_offset)*(x - n_offset);
      
             end
@@ -54,7 +58,7 @@ for n = 1:(num_blocks_n);
         %produce an image using only the mean value
         
         for channel = 1:1:3;   
-            aout(m,n,channel) = uint8(mean(channel));
+            aout((1:box_y) + m_offset,(1:box_x) + n_offset,channel) = uint8(mean(channel));
         end
     end
 end
