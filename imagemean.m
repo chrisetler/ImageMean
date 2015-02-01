@@ -30,52 +30,61 @@ for n = 1:(num_blocks_n);
     for m = 1:(num_blocks_m);
         n_offset = (n-1)*boxsize+1;
         m_offset = (m-1)*boxsize+1;
+        
 
         %crops the image to a square with side lengths of $blocksize
-        %b = imcrop(a, [n m n+boxsize m+boxsize]);
 
-
-        %get the mean for each channel in the box
-        channel_sum = uint64(zeros(1,3));
-        mean = zeros(1,3);
-        %for channel = 1:1:3;
-            if(n ~= num_blocks_n && m ~= num_blocks_m);
+        %channel_sum = uint64(zeros(1,3));
+        %mean = zeros(1,3);
+            %if(n ~= num_blocks_n && m ~= num_blocks_m);
+            if((n_offset+boxsize) <= x  && (m_offset+boxsize) <= y);
                 box_mat = a((m_offset):(m_offset+boxsize), (n_offset):(n_offset+boxsize), 1:3);
                 channel_sum = sum(sum(box_mat));
                 box_x = boxsize;
                 box_y = boxsize;
                 channel_length = (boxsize+1)*(boxsize+1);
             else
-                box_mat = a((m_offset):y, (n_offset):x, 1:3);
+                if (n_offset+boxsize > x)
+                    box_x = x-n_offset;
+                else
+                    box_x = boxsize;
+                end
+                if (m_offset+boxsize > y)
+                    box_y = y-m_offset;
+                else
+                    box_y = boxsize;
+                end
+                box_mat = a((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x), 1:3);
                 channel_sum = sum(sum(box_mat));
-                box_x = x - n_offset;
-                box_y = y - m_offset;
-                channel_length = (y - m_offset)*(x - n_offset);
+                channel_length = box_x.*box_y;
      
             end
-        for channel = 1:1:3;
-            mean(channel) = channel_sum(channel) ./ channel_length;
-        end
+            
+        %get the mean for each channel in the box
+        %for channel = 1:1:3;
+            mean = channel_sum ./ channel_length;
+        %end
         
         %The math for the specific algorith
         %produce an image using only the mean value
+        %does math on the block matrix and makes it ready for output, at
+        %which point it is stitched on to the final image at the
+        %appropriate position
+        
         box_mat = box_mat.*0;
         box_mat = box_mat+1;
         for i = 1:1:3;
-           
-            box_mat(:,:,i) = uint8(mean(i)).*box_mat(:,:,i);
+            box_mat(:,:,i) = (mean(i)).*box_mat(:,:,i);
         end
         
         
-        %for channel = 1:1:3;   
-            %aout((1:box_y) + m_offset,(1:box_x) + n_offset,channel) = uint8(box_mat(channel));
-        if(n ~= num_blocks_n && m ~= num_blocks_m);
-            aout((m_offset):(m_offset+boxsize), (n_offset):(n_offset+boxsize),1:3) = uint8(box_mat);
-        else 
-            aout((m_offset):y, (n_offset):x,1:3) = uint8(box_mat);
-        end
-            
+        %if(n ~= num_blocks_n && m ~= num_blocks_m);
+        %if((n_offset+boxsize) <= x  && (m_offset+boxsize) <= y);
+        %    aout((m_offset):(m_offset+boxsize), (n_offset):(n_offset+boxsize),1:3) = uint8(box_mat);
+        %else 
+        %    aout((y-boxsize-1):y, (x-boxsize-1):x, 1:3) = uint8(box_mat);
         %end
+        aout((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x), 1:3) = uint8(box_mat);
     end
 end
 
