@@ -23,7 +23,7 @@ num_blocks_n = ceil(x / boxsize);
 num_blocks_m = ceil(y / boxsize);
 %generates the output file
 %uint8 because color values go typically from 0-255
-aout = uint8(zeros(num_blocks_m,num_blocks_n,3));
+aout = uint8(zeros(y,x,3));
 
 %goes through the image block by block
 for n = 1:(num_blocks_n);
@@ -50,11 +50,18 @@ for n = 1:(num_blocks_n);
             end
             mean(channel) = channel_sum(channel) / channel_length;
         end
-
+        
+        
         %produce an image using only the mean value
         
         for channel = 1:1:3;   
-            aout(m,n,channel) = uint8(mean(channel));
+            %aout(m:(m+m_offset),n:(n+n_offset),channel) = uint8(mean(channel));
+            if(n ~= num_blocks_n && m ~= num_blocks_m)
+                aout(m_offset:(m_offset+boxsize),n_offset:(boxsize+n_offset),channel) = uint8(mean(channel));
+            else
+                aout(m_offset:y,n_offset:x,channel) = uint8(mean(channel));
+            end
+            
         end
     end
 end
