@@ -18,7 +18,7 @@ a = imread(image_name);
 
 %how big of an area to break the image up into
 %bigger => blockier image
-boxsize = 2;
+boxsize = 10;
 num_blocks_n = ceil(x / boxsize);
 num_blocks_m = ceil(y / boxsize);
 %generates the output file
@@ -38,28 +38,44 @@ for n = 1:(num_blocks_n);
         %get the mean for each channel in the box
         channel_sum = uint64(zeros(1,3));
         mean = zeros(1,3);
-        for channel = 1:1:3;
-            if(n ~= num_blocks_n && m ~= num_blocks_m)
-                channel_sum(channel) = sum(sum(a((m_offset):(m_offset+boxsize), (n_offset):(n_offset+boxsize), channel)));
+        %for channel = 1:1:3;
+            if(n ~= num_blocks_n && m ~= num_blocks_m);
+                box_mat = a((m_offset):(m_offset+boxsize), (n_offset):(n_offset+boxsize), 1:3);
+                channel_sum = sum(sum(box_mat));
                 box_x = boxsize;
                 box_y = boxsize;
                 channel_length = (boxsize+1)*(boxsize+1);
             else
-                channel_sum(channel) = sum(sum(a((m_offset):y, (n_offset):x, channel)));
+                box_mat = a((m_offset):y, (n_offset):x, 1:3);
+                channel_sum = sum(sum(box_mat));
                 box_x = x - n_offset;
                 box_y = y - m_offset;
                 channel_length = (y - m_offset)*(x - n_offset);
      
             end
-            mean(channel) = channel_sum(channel) / channel_length;
+        for channel = 1:1:3;
+            mean(channel) = channel_sum(channel) ./ channel_length;
         end
         
-        
+        %The math for the specific algorith
         %produce an image using only the mean value
-        
-        for channel = 1:1:3;   
-            aout((1:box_y) + m_offset,(1:box_x) + n_offset,channel) = uint8(mean(channel));
+        box_mat = box_mat.*0;
+        box_mat = box_mat+1;
+        for i = 1:1:3;
+           
+            box_mat(:,:,i) = uint8(mean(i)).*box_mat(:,:,i);
         end
+        
+        
+        %for channel = 1:1:3;   
+            %aout((1:box_y) + m_offset,(1:box_x) + n_offset,channel) = uint8(box_mat(channel));
+        if(n ~= num_blocks_n && m ~= num_blocks_m);
+            aout((m_offset):(m_offset+boxsize), (n_offset):(n_offset+boxsize),1:3) = uint8(box_mat);
+        else 
+            aout((m_offset):y, (n_offset):x,1:3) = uint8(box_mat);
+        end
+            
+        %end
     end
 end
 
