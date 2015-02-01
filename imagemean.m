@@ -37,14 +37,13 @@ for n = 1:(num_blocks_n);
 
         %get the mean for each channel in the box
         channel_sum = uint64(zeros(1,3));
-        len = zeros(1,3);
         mean = zeros(1,3);
         for channel = 1:1:3;
             if(n ~= num_blocks_n && m ~= num_blocks_m)
                 channel_sum(channel) = sum(sum(a((m_offset):(m_offset+boxsize), (n_offset):(n_offset+boxsize), channel)));
                 box_x = boxsize;
                 box_y = boxsize;
-                channel_length = boxsize*boxsize;
+                channel_length = (boxsize+1)*(boxsize+1);
             else
                 channel_sum(channel) = sum(sum(a((m_offset):y, (n_offset):x, channel)));
                 box_x = x - n_offset;
