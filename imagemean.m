@@ -53,7 +53,8 @@ for n = 1:(num_blocks_n);
             end
             mean(channel) = channel_sum(channel) / channel_length;
         end
-
+        
+        
         %produce an image using only the mean value
         
         for channel = 1:1:3;   
