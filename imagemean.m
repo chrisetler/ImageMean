@@ -7,8 +7,9 @@
 clear;
 
 %image to be used
-image_name = '1.png';
+image_name = 'ocean.png';
 a = imread(image_name);
+bw = rgb2gray(a);
 
 % width and height
 % z is the number of channels
@@ -16,11 +17,11 @@ a = imread(image_name);
 
 %generates the output file
 %uint8 because color values go typically from 0-255
-aout = uint8(zeros(y,x,3));
+aout = uint8(zeros(y,x,z));
 
 %how big of an area to break the image up into
 %bigger => blockier image
-boxsize = 10;
+boxsize = 8;
 
 num_blocks_n = ceil(x / boxsize);
 num_blocks_m = ceil(y / boxsize);
@@ -48,32 +49,29 @@ for n = 1:(num_blocks_n);
         end
         
         %matrix for the current box
-        box_mat = a((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x), 1:3);
+        box_mat = a((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x), 1:z);
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%%%%%%%%   The math for the specific algorith   %%%%%%%%%%%%%%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        %gets the sum of values and the total number of values, to obtain
-        %the mean value
-        channel_sum = sum(sum(box_mat));
-        channel_length = box_x.*box_y;
-        mean = channel_sum ./ channel_length;
-        
-        %produce a matrix uses the mean values for each channel
-        box_mat = box_mat.*0;
-        box_mat = box_mat+1;
-        for i = 1:1:3;
-            box_mat(:,:,i) = (mean(i)).*box_mat(:,:,i);
+        %get the 2D DCT of the current box, channel-by-channel
+        for(channel = 1:z)
+            a_DCT((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x),channel) = dct2(box_mat(:,:,channel));
         end
+        %treshold the values
+        a_DCT(abs(a_DCT) < 10) = 0;
+        
+        
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%%%%%%%%      END math for specific algorithm      %%%%%%%%%%%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         %output the box matrix to it's coordinates on the final image
-        aout((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x), 1:3) = uint8(box_mat);
-    
+        for(channel = 1:z)
+            aout((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x), channel) = idct2(a_DCT((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x), channel));
+        end
     end
 end
 
