@@ -1,10 +1,25 @@
-%Author: Chris Etler
+%Author: Chris and David Etler
 %Description: Takes a image and compresses it by converted it into small
 %blocks with dimensions specified by $blocksize, and using the mean color
 %value for each block as the output color for that section of the image
 %
 %Essentially this is an image-pixelator
+
+%%OUTPUTS
+%   aout -- compressed JPEG image
+%   a_DCT_n -- DCT of compressed JPEG image
+%   aout_un -- lossless JPEG image (should be the same as a)
+%   a_DCT -- DCT of lossless JPEG
+%   c -- a quantized in spacial domain
+
+%%PARAMETERS
+%   Q -- quantizing factor
+%   image_name -- file name of image
+%   boxsize -- size of boxes (recommended 3)
 clear;
+
+% Quantizing constant (lower number = higher quality)
+Q = 16;
 
 %image to be used
 image_name = 'ocean.png';
@@ -27,7 +42,9 @@ num_blocks_n = ceil(x / boxsize);
 num_blocks_m = ceil(y / boxsize);
 
 
-%goes through the image block by block
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                               ENCODING                                  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for n = 1:(num_blocks_n);
     for m = 1:(num_blocks_m);
         n_offset = (n-1)*boxsize+1;
@@ -57,23 +74,16 @@ for n = 1:(num_blocks_n);
         
         %get the 2D DCT of the current box, channel-by-channel
         for(channel = 1:z)
-            a_DCT((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x),channel) = dct2(box_mat(:,:,channel));
-        end
-        %treshold the values
-        a_DCT(abs(a_DCT) < 10) = 0;
-        
-        
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%%%%%%%%%%      END math for specific algorithm      %%%%%%%%%%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        %output the box matrix to it's coordinates on the final image
-        for(channel = 1:z)
-            aout((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x), channel) = idct2(a_DCT((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x), channel));
+            curr_box = dct2(box_mat(:,:,channel));
+            a_DCT((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x),channel) = curr_box;
+            aout_un((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x),channel) = idct2(curr_box);
+            curr_box = Q.*round(abs(curr_box)/Q).*sign(curr_box);
+            a_DCT_n((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x),channel) = curr_box;
+            aout((m_offset):(m_offset+box_y), (n_offset):(n_offset+box_x),channel) = idct2(curr_box);
         end
     end
 end
+
 
 
       
